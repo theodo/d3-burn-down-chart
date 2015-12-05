@@ -1,0 +1,35 @@
+{
+  "name": "d3-bdc",
+  "version": "1.0.0",
+  "description": "A lib to draw a burn down charts",
+  "main": "dist/bdc.min.js",
+  "devDependencies": {
+    "gulp-concat": "2.6.0",
+    "gulp-coffee": "2.3.1",
+    "gulp-minify": "0.0.5"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theodo/d3-burn-down-chart.git"
+  },
+  "keywords": [
+    "d3",
+    "burn down chart",
+    "scrum",
+    "agile",
+    "line chart"
+  ],
+  "author": "Nicolas Girault",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/theodo/d3-burn-down-chart/issues"
+  },
+  "homepage": "https://github.com/theodo/d3-burn-down-chart#readme",
+  "dependencies": {
+    "gulp": "^3.9.0",
+    "gulp-gh-pages": "^0.5.4"
+  }
+}

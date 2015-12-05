@@ -100,3 +100,11 @@ python -m SimpleHTTPServer &
 gulp watch
 # you can access the BDC on localhost:8000/demo
 ```
+
+## deploy
+
+Deploy on github pages: http://theodo.github.io/d3-burn-down-chart
+
+```
+gulp deploy
+```

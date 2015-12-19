@@ -14,6 +14,7 @@ config =
     bad: '#FA6E69'
     labels: '#113F59'
   startLabel: 'Start'
+  endLabel: 'Ceremony'
   dateFormat: '%A'
   xTitle: 'Daily meetings'
   dotRadius: 4
@@ -54,7 +55,8 @@ renderBDC = (data, cfg) ->
   .ticks data.length # number of ticks to display
   .tickFormat (d, i, j) ->
     return unless data[i]?
-    return cfg.startLabel if i == 0
+    return cfg.startLabel if cfg.startLabel? and i == 0
+    return cfg.endLabel if cfg.endLabel? and i == data.length - 1
     dateFormat = d3.time.format cfg.dateFormat
     dateFormat data[i].date
 

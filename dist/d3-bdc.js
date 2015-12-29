@@ -29,13 +29,16 @@ config = {
 };
 
 renderBDC = function(data, cfg) {
-  var actualLine, addArrowHead, adjustDaysLabels, adjustPointsLabels, bdcgraph, chart, d, first, initialNumberOfPoints, last, standardLine, x, xAxis, y, yAxis;
+  var actualLine, addArrowHead, adjustDaysLabels, adjustPointsLabels, bdcgraph, chart, d, first, initialNumberOfPoints, last, maxDone, standardLine, x, xAxis, y, yAxis;
   first = data[0], last = data[data.length - 1];
   initialNumberOfPoints = last.standard;
+  maxDone = d3.max(data, function(datum) {
+    return datum.done;
+  });
   bdcgraph = d3.select(cfg.containerId);
   bdcgraph.select('*').remove();
   x = d3.scale.linear().domain([0, data.length]).range([0, cfg.width]);
-  y = d3.scale.linear().domain([Math.min(0, initialNumberOfPoints - last.done), initialNumberOfPoints]).range([cfg.height, 0]);
+  y = d3.scale.linear().domain([Math.min(0, initialNumberOfPoints - maxDone), initialNumberOfPoints]).range([cfg.height, 0]);
   standardLine = d3.svg.line().x(function(d, i) {
     return x(i);
   }).y(function(d) {

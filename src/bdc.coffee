@@ -26,6 +26,7 @@ config =
 renderBDC = (data, cfg) ->
   [first, ..., last] = data
   initialNumberOfPoints = last.standard
+  maxDone = d3.max data, (datum) -> datum.done
 
   bdcgraph = d3.select cfg.containerId
   bdcgraph.select('*').remove()
@@ -36,7 +37,7 @@ renderBDC = (data, cfg) ->
 
   y = d3.scale.linear()
   .domain [
-    Math.min(0, initialNumberOfPoints - last.done)
+    Math.min(0, initialNumberOfPoints - maxDone)
     initialNumberOfPoints
   ]
   .range [cfg.height, 0]

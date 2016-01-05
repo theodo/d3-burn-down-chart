@@ -26,8 +26,7 @@ config =
 renderBDC = (data, cfg) ->
   [first, ..., last] = data
   initialNumberOfPoints = last.standard
-  maxDone = d3.max data, (datum) -> datum.done
-
+  maxDone = d3.max data, (datum) -> datum.done or 0
   bdcgraph = d3.select cfg.containerId
   bdcgraph.select('*').remove()
 

@@ -1,3 +1,24 @@
+var renderXaxis;
+
+renderXaxis = function(scale, config, data) {
+  var xAxis;
+  xAxis = d3.svg.axis().scale(scale).orient('bottom').ticks(data.length).tickFormat(function(d, i, j) {
+    var dateFormat;
+    if (data[i] == null) {
+      return;
+    }
+    if ((config.startLabel != null) && i === 0) {
+      return config.startLabel;
+    }
+    if ((config.endLabel != null) && i === data.length - 1) {
+      return config.endLabel;
+    }
+    dateFormat = d3.time.format(config.dateFormat);
+    return dateFormat(data[i].date);
+  });
+  return xAxis;
+};
+
 var config, renderBDC;
 
 config = {
@@ -20,7 +41,9 @@ config = {
   startLabel: 'Start',
   endLabel: 'Ceremony',
   dateFormat: '%A',
+  shortDateFormat: '%d/%m',
   xTitle: 'Daily meetings',
+  yScaleOrient: 'left',
   dotRadius: 4,
   standardStrokeWidth: 2,
   doneStrokeWidth: 2,
@@ -49,21 +72,8 @@ renderBDC = function(data, cfg) {
   }).y(function(d) {
     return y(initialNumberOfPoints - d.done);
   });
-  xAxis = d3.svg.axis().scale(x).orient('bottom').ticks(data.length).tickFormat(function(d, i, j) {
-    var dateFormat;
-    if (data[i] == null) {
-      return;
-    }
-    if ((cfg.startLabel != null) && i === 0) {
-      return cfg.startLabel;
-    }
-    if ((cfg.endLabel != null) && i === data.length - 1) {
-      return cfg.endLabel;
-    }
-    dateFormat = d3.time.format(cfg.dateFormat);
-    return dateFormat(data[i].date);
-  });
-  yAxis = d3.svg.axis().scale(y).orient('left').innerTickSize(-cfg.width).outerTickSize(0);
+  xAxis = renderXaxis(x, cfg, data);
+  yAxis = d3.svg.axis().scale(y).orient(cfg.yScaleOrient).innerTickSize(-cfg.width).outerTickSize(0);
   chart = bdcgraph.append('svg').attr('class', 'chart').attr('width', cfg.width + cfg.margins.left + cfg.margins.right).attr('height', cfg.height + cfg.margins.top + cfg.margins.bottom).append('g').attr('transform', 'translate(' + cfg.margins.left + ',' + cfg.margins.top + ')').attr('font-size', 'small');
   chart.append('defs').append('marker').attr('id', 'arrowhead').attr('markerWidth', '12').attr('markerHeight', '12').attr('viewBox', '-6 -6 12 12').attr('refX', '-2').attr('refY', '0').attr('markerUnits', 'strokeWidth').attr('orient', 'auto').append('polygon').attr('points', '-2,0 -5,5 5,0 -5,-5').attr('fill', cfg.colors.standard).attr('stroke', '#666').attr('stroke-width', '1px');
   addArrowHead = function(selection) {
@@ -74,13 +84,71 @@ renderBDC = function(data, cfg) {
       return 'url(#arrowhead)';
     });
   };
-  adjustDaysLabels = function(selection) {
-    return selection.selectAll('text').attr('fill', cfg.colors.labels).attr('transform', 'translate(0, 6)');
+  adjustDaysLabels = function(axis) {
+    return function(selection) {
+      var adjustLabels, isLabelOverlap;
+      isLabelOverlap = function(selection, tickNumber, config) {
+        var availableWidth, maxWidth, text;
+        availableWidth = config.width / tickNumber;
+        text = selection.selectAll('text');
+        maxWidth = 0;
+        text.each(function(label) {
+          var width;
+          width = d3.select(this).node().getBBox().width;
+          if (width > maxWidth) {
+            return maxWidth = width;
+          }
+        });
+        return maxWidth >= availableWidth;
+      };
+      adjustLabels = function() {
+        if (isLabelOverlap(selection, data.length, cfg)) {
+          axis = axis.tickFormat(function(d, i, j) {
+            var dateFormat;
+            if (data[i] == null) {
+              return;
+            }
+            if ((config.startLabel != null) && i === 0) {
+              return config.startLabel;
+            }
+            if ((config.endLabel != null) && i === data.length - 1) {
+              return config.endLabel;
+            }
+            dateFormat = d3.time.format(config.shortDateFormat);
+            return dateFormat(data[i].date);
+          });
+          axis(selection);
+        }
+        if (isLabelOverlap(selection, data.length, cfg)) {
+          axis.tickFormat(function(d, i, j) {
+            var dateFormat;
+            if (data[i] == null) {
+              return;
+            }
+            if (i % 2 === 0) {
+              return;
+            }
+            if ((config.startLabel != null) && i === 0) {
+              return config.startLabel;
+            }
+            if ((config.endLabel != null) && i === data.length - 1) {
+              return config.endLabel;
+            }
+            dateFormat = d3.time.format(config.shortDateFormat);
+            return dateFormat(data[i].date);
+          });
+          axis(selection);
+        }
+        selection.selectAll('text').attr('fill', cfg.colors.labels).attr('transform', 'translate(0, 6)');
+        if (isLabelOverlap(selection, data.length / 2, cfg)) {
+          return selection.selectAll('text').attr('transform', 'translate(-5, 6) rotate(-30)');
+        }
+      };
+      return adjustLabels();
+    };
   };
-  adjustPointsLabels = function(selection) {
-    return selection.selectAll('text').attr('fill', cfg.colors.labels).attr('transform', 'translate(-6, 0)');
-  };
-  chart.append('g').attr('class', 'x axis').attr('transform', 'translate(0,' + cfg.height + ')').call(xAxis).call(adjustDaysLabels).append('text').attr('class', 'daily').attr('fill', cfg.colors.labels).attr('font-weight', 'bold').attr('transform', 'translate(' + cfg.width + ', 25)').attr('x', 20).style('text-anchor', 'end').text(cfg.xTitle);
+  adjustPointsLabels = function(selection) {};
+  chart.append('g').attr('class', 'x axis').attr('transform', 'translate(0,' + cfg.height + ')').call(xAxis).call(adjustDaysLabels(xAxis)).append('text').attr('class', 'daily').attr('fill', cfg.colors.labels).attr('font-weight', 'bold').attr('transform', 'translate(' + cfg.width + ', 25)').attr('x', 20).style('text-anchor', 'end').text(cfg.xTitle);
   chart.append('g').attr('class', 'y axis').call(yAxis).call(adjustPointsLabels).call(addArrowHead);
   chart.selectAll('.axis path, .axis line').attr('fill', 'none').attr('stroke', 'rgba(0, 1, 0, 0.2)').attr('color', 'rgba(0, 1, 0, 0.5)').attr('shape-rendering', 'crispEdges');
   chart.append('path').attr('class', 'standard').attr('d', standardLine(data)).attr('stroke', cfg.colors.standard).attr('stroke-width', cfg.standardStrokeWidth).attr('stroke-dasharray', '10 5').attr('fill', 'none');

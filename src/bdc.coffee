@@ -16,7 +16,9 @@ config =
   startLabel: 'Start'
   endLabel: 'Ceremony'
   dateFormat: '%A'
+  shortDateFormat: '%d/%m'
   xTitle: 'Daily meetings'
+  yScaleOrient: 'left'
   dotRadius: 4
   standardStrokeWidth: 2
   doneStrokeWidth: 2
@@ -62,7 +64,7 @@ renderBDC = (data, cfg) ->
 
   yAxis = d3.svg.axis()
   .scale y
-  .orient 'left'
+  .orient cfg.yScaleOrient
   .innerTickSize -cfg.width # display horizontal grids
   .outerTickSize 0
 
@@ -97,22 +99,64 @@ renderBDC = (data, cfg) ->
       return if i > 0 # the arrow is only for the first grid
       'url(#arrowhead)'
 
-  adjustDaysLabels = (selection) ->
-    selection.selectAll 'text'
-    .attr 'fill', cfg.colors.labels
-    .attr 'transform', 'translate(0, 6)'
+  adjustDaysLabels = (axis) ->
+
+    (selection) ->
+
+      isLabelOverlap = (selection, tickNumber, config) ->
+        availableWidth = config.width / tickNumber
+
+        text = selection.selectAll 'text'
+        maxWidth = 0
+        text.each (label) ->
+          width = d3.select(@).node().getBBox().width
+          maxWidth = width if width > maxWidth
+        return maxWidth >= availableWidth
+
+      adjustLabels = ->
+
+        if isLabelOverlap(selection, data.length, cfg)
+          axis = axis
+          .tickFormat (d, i, j) ->
+            return unless data[i]?
+            return config.startLabel if config.startLabel? and i == 0
+            return config.endLabel if config.endLabel? and i == data.length - 1
+            dateFormat = d3.time.format config.shortDateFormat
+            dateFormat data[i].date
+          axis(selection)
+
+        if isLabelOverlap(selection, data.length, cfg)
+          axis
+          .tickFormat (d, i, j) ->
+            return unless data[i]?
+            return if i % 2 is 0
+            return config.startLabel if config.startLabel? and i == 0
+            return config.endLabel if config.endLabel? and i == data.length - 1
+            dateFormat = d3.time.format config.shortDateFormat
+            dateFormat data[i].date
+          axis(selection)
+
+        selection.selectAll 'text'
+        .attr 'fill', cfg.colors.labels
+        .attr 'transform', 'translate(0, 6)'
+
+        if isLabelOverlap(selection, data.length/2, cfg)
+          selection.selectAll 'text'
+          .attr 'transform', 'translate(-5, 6) rotate(-30)'
+
+      adjustLabels()
 
   adjustPointsLabels = (selection) ->
-    selection.selectAll 'text'
-    .attr 'fill', cfg.colors.labels
-    .attr 'transform', 'translate(-6, 0)'
+    # selection.selectAll 'text'
+    # .attr 'fill', cfg.colors.labels
+    # .attr 'transform', 'translate(-6, 0)'
 
   # display the x-axis
   chart.append 'g'
   .attr 'class', 'x axis'
   .attr 'transform', 'translate(0,' + cfg.height + ')'
   .call xAxis
-  .call adjustDaysLabels
+  .call adjustDaysLabels(xAxis)
   .append 'text'
   .attr 'class', 'daily'
   .attr 'fill', cfg.colors.labels

@@ -9,7 +9,7 @@
 <script>
 config = {
   containerId: '#bdcgraph',
-  width: 900,
+  width: window.innerWidth,
   height: 500,
   margins: {
     top: 20,
@@ -26,7 +26,9 @@ config = {
   startLabel: 'Start',
   endLabel: 'End',
   dateFormat: '%A',
+  shortDateFormat: '%d/%m',
   xTitle: 'Daily meetings',
+  yScaleOrient: 'left',
   dotRadius: 4,
   standardStrokeWidth: 2,
   doneStrokeWidth: 2,
@@ -62,10 +64,84 @@ data = [
   },
   {
     date: new Date(2015,12,6),
+    standard: 16,
+    done: 13,
+  },
+  {
+    date: new Date(2015,12,7),
+    standard: 22,
+    done: 24,
+  },
+  {
+    date: new Date(2015,12,8),
+    standard: 30,
+    done: 28,
+  },
+  {
+    date: new Date(2015,12,9),
+    standard: 16,
+    done: 13,
+  },
+  {
+    date: new Date(2015,12,10),
+    standard: 22,
+    done: 24,
+  },
+  {
+    date: new Date(2015,12, 11),
+    standard: 30,
+    done: 28,
+  },
+  {
+    date: new Date(2015,12,12),
+    standard: 40,
+    done: null,
+  },
+  {
+    date: new Date(2015,12,13),
+    standard: 22,
+    done: 24,
+  },
+  {
+    date: new Date(2015,12, 14),
+    standard: 30,
+    done: 28,
+  },
+  {
+    date: new Date(2015,12,15),
+    standard: 40,
+    done: null,
+  },
+  {
+    date: new Date(2015,12,16),
+    standard: 22,
+    done: 24,
+  },
+  {
+    date: new Date(2015,12, 17),
+    standard: 30,
+    done: 28,
+  },
+  {
+    date: new Date(2015,12,18),
     standard: 40,
     done: null,
   },
 ];
 
 renderBDC(data, config);
+
+window.onresize = function(){
+  config.width = window.innerWidth;
+  if (window.innerWidth < 800) {
+    config.margins.left = 0
+    config.margins.right = 0
+    config.yScaleOrient = 'right'
+  } else {
+    config.margins.left = 50
+    config.margins.right = 70
+    config.yScaleOrient = 'left'
+  }
+  renderBDC(data, config);
+}
 </script>

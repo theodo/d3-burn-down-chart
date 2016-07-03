@@ -1,20 +1,20 @@
-defaultConfig = require('./default-config');
+window.renderBDC = function(data, userConfig) {
+  var defaultConfig = require('./default-config');
 
-validateData = function(data) {
-  if(!Array.isArray(data)) {
-    console.warn('[d3-burn-down-chart] data is not an array');
-    return false;
+  var validateData = function(data) {
+    if(!Array.isArray(data)) {
+      console.warn('[d3-burn-down-chart] data is not an array');
+      return false;
+    }
+
+    if(data.length < 2) {
+      console.warn('[d3-burn-down-chart] data length is less than 2');
+      return false;
+    }
+
+    return true;
   }
 
-  if(data.length < 2) {
-    console.warn('[d3-burn-down-chart] data length is less than 2');
-    return false;
-  }
-
-  return true;
-}
-
-renderBDC = function(data, userConfig) {
   config = Object.assign({}, defaultConfig);
   Object.assign(config, userConfig);
 
@@ -22,53 +22,52 @@ renderBDC = function(data, userConfig) {
     return;
   }
 
-  [first, last] = [data[0], data[data.length - 1]];
-  initialNumberOfPoints = last.standard;
-  maxDone = d3.max(data, (datum) => datum.done || 0);
-  bdcgraph = d3.select(config.containerId);
+  var [first, last] = [data[0], data[data.length - 1]];
+  var initialNumberOfPoints = last.standard;
+  var maxDone = d3.max(data, (datum) => datum.done || 0);
+  var bdcgraph = d3.select(config.containerId);
   bdcgraph.select('*').remove();
 
-  x = d3.scale.linear() // x scale can't be d3.time because we don't want to display weekends
+  var x = d3.scale.linear() // x scale can't be d3.time because we don't want to display weekends
   .domain([0, data.length])
   .range([0, config.width]);
 
-  y = d3.scale.linear()
+  var y = d3.scale.linear()
   .domain([Math.min(0, initialNumberOfPoints - maxDone), initialNumberOfPoints])
   .range([config.height, 0]);
 
-  standardLine = d3.svg.line()
+  var standardLine = d3.svg.line()
   .x((d, i) => x(i))
   .y((d) => y(initialNumberOfPoints - d.standard))
 
-  actualLine = d3.svg.line()
+  var actualLine = d3.svg.line()
   .x((d, i) => x(i))
   .y((d) => y(initialNumberOfPoints - d.done))
 
-  xAxis = d3.svg.axis()
+  var xAxis = d3.svg.axis()
   .scale(x)
   .orient('bottom')
-  .ticks(data.length) // number of ticks to display
-  .tickFormat(function(d, i){
-    if(!data[i]) {
-      return;
-    }
-    if(config.startLabel && i === 0) {
-      return config.startLabel;
-    }
-    if(config.endLabel && i === data.length - 1) {
-      return config.endLabel;
-    }
-    dateFormat = d3.time.format(config.dateFormat);
-    return dateFormat(data[i].date);
-  });
+  .ticks(data.length); // number of ticks to display
 
-  yAxis = d3.svg.axis()
+  var yAxis = d3.svg.axis()
   .scale(y)
   .orient(config.yScaleOrient)
-  .innerTickSize(-config.width) // display horizontal grids
-  .outerTickSize(0);
+  .tickPadding(10)
+  .outerTickSize(0)
+  .tickFormat(function(d, i) {
+    if(i === 0 && config.yScaleOrient === 'right') {
+      return;
+    }
+    return d;
+  });
 
-  chart = bdcgraph.append('svg')
+  if(config.yScaleOrient === 'left') {
+    yAxis.innerTickSize(-config.width); // display horizontal grids
+  } else {
+    yAxis.innerTickSize(5);
+  }
+
+  var chart = bdcgraph.append('svg')
   .attr('class', 'chart')
   .attr('width', config.width + config.margins.left + config.margins.right)
   .attr('height', config.height + config.margins.top + config.margins.bottom)
@@ -93,49 +92,52 @@ renderBDC = function(data, userConfig) {
   .attr('stroke', '#666')
   .attr('stroke-width', '1px');
 
-  addArrowHead = function(selection) {
+  var addArrowHead = function(selection) {
     selection.selectAll('line')
     .attr('marker-end', function(d, i) {
-      if(i > 0) { // the arrow is only for the first grid
+      if(i === 0 && config.yScaleOrient === 'left') { // the arrow is only for the first grid
         return 'url(#arrowhead)';
       }
     });
   }
 
-  adjustDaysLabels = function(axis, selection) {
-    isLabelOverlaping = function(selection, tickNumber, config) {
-      availableWidth = config.width / tickNumber;
+  var drawLabels = function(selection, axis, data, format, filter) {
+    axis = axis.tickFormat(function(d, i) {
+      if(!data[i]) {
+        return;
+      }
+      if(config.yScaleOrient === 'right' && i === 0) {
+        return;
+      }
+      if(config.startLabel && i === 0) {
+        return config.startLabel;
+      }
+      if(config.endLabel && i === data.length - 1) {
+        return config.endLabel;
+      }
+      if(!filter(d, i)) {
+        return;
+      }
+      var dateFormat = d3.time.format(format);
+      return dateFormat(data[i].date);
+    });
+    axis(selection);
+  };
 
-      text = selection.selectAll('text');
-      maxWidth = 0;
+  var adjustDaysLabels = function(axis, selection) {
+    var isLabelOverlaping = function(selection, tickNumber, config) {
+      var availableWidth = config.width / tickNumber;
+
+      var text = selection.selectAll('text');
+      var maxWidth = 0;
       text.each(function(label) {
-        width = d3.select(this).node().getBBox().width;
+        var width = d3.select(this).node().getBBox().width;
         if(width > maxWidth) {
           maxWidth = width;
         }
       });
       return maxWidth >= availableWidth;
     }
-
-    drawLabels = function(selection, axis, data, format, filter) {
-      axis = axis.tickFormat(function(d, i) {
-        if(!data[i]) {
-          return;
-        }
-        if(config.startLabel && i === 0) {
-          return config.startLabel;
-        }
-        if(config.endLabel && i === data.length - 1) {
-          return config.endLabel;
-        }
-        if(!filter(d, i)) {
-          return;
-        }
-        dateFormat = d3.time.format(format);
-        return dateFormat(data[i].date);
-      });
-      axis(selection);
-    };
 
     if(isLabelOverlaping(selection, data.length, config)) {
       drawLabels(selection, axis, data, config.shortDateFormat, () => true);
@@ -155,18 +157,12 @@ renderBDC = function(data, userConfig) {
     }
   }
 
-  adjustPointsLabels = function(selection) {
-    // selection.selectAll 'text'
-    // .attr 'fill', config.colors.labels
-    // .attr 'transform', 'translate(-6, 0)'
-    return;
-  }
-
   // display the x-axis
-  selection = chart.append('g')
+  var selection = chart.append('g')
   .attr('class', 'x axis')
-  .attr('transform', 'translate(0,' + config.height + ')')
-  .call(xAxis);
+  .attr('transform', 'translate(0,' + config.height + ')');
+
+  drawLabels(selection, xAxis, data, config.dateFormat, () => true);
 
   adjustDaysLabels(xAxis, selection);
 
@@ -184,7 +180,6 @@ renderBDC = function(data, userConfig) {
   chart.append('g')
   .attr('class', 'y axis')
   .call(yAxis)
-  .call(adjustPointsLabels)
   .call(addArrowHead);
 
   chart.selectAll('.axis path, .axis line')
@@ -267,7 +262,7 @@ renderBDC = function(data, userConfig) {
     if(d.done === null || d.done === undefined || i === 0) {
       return;
     }
-    diff = d.done - d.standard
+    var diff = d.done - d.standard
     if(diff >= 0) {
       return '+' + diff.toFixed(1) + config.goodSuffix;
     } else {

@@ -46,23 +46,23 @@
 
 	'use strict';
 
-	defaultConfig = __webpack_require__(1);
+	window.renderBDC = function (data, userConfig) {
+	  var defaultConfig = __webpack_require__(1);
 
-	validateData = function validateData(data) {
-	  if (!Array.isArray(data)) {
-	    console.warn('[d3-burn-down-chart] data is not an array');
-	    return false;
-	  }
+	  var validateData = function validateData(data) {
+	    if (!Array.isArray(data)) {
+	      console.warn('[d3-burn-down-chart] data is not an array');
+	      return false;
+	    }
 
-	  if (data.length < 2) {
-	    console.warn('[d3-burn-down-chart] data length is less than 2');
-	    return false;
-	  }
+	    if (data.length < 2) {
+	      console.warn('[d3-burn-down-chart] data length is less than 2');
+	      return false;
+	    }
 
-	  return true;
-	};
+	    return true;
+	  };
 
-	renderBDC = function renderBDC(data, userConfig) {
 	  config = Object.assign({}, defaultConfig);
 	  Object.assign(config, userConfig);
 
@@ -70,98 +70,98 @@
 	    return;
 	  }
 
-	  first = data[0];
-	  last = data[data.length - 1];
+	  var first = data[0];
+	  var last = data[data.length - 1];
 
-	  initialNumberOfPoints = last.standard;
-	  maxDone = d3.max(data, function (datum) {
+	  var initialNumberOfPoints = last.standard;
+	  var maxDone = d3.max(data, function (datum) {
 	    return datum.done || 0;
 	  });
-	  bdcgraph = d3.select(config.containerId);
+	  var bdcgraph = d3.select(config.containerId);
 	  bdcgraph.select('*').remove();
 
-	  x = d3.scale.linear() // x scale can't be d3.time because we don't want to display weekends
+	  var x = d3.scale.linear() // x scale can't be d3.time because we don't want to display weekends
 	  .domain([0, data.length]).range([0, config.width]);
 
-	  y = d3.scale.linear().domain([Math.min(0, initialNumberOfPoints - maxDone), initialNumberOfPoints]).range([config.height, 0]);
+	  var y = d3.scale.linear().domain([Math.min(0, initialNumberOfPoints - maxDone), initialNumberOfPoints]).range([config.height, 0]);
 
-	  standardLine = d3.svg.line().x(function (d, i) {
+	  var standardLine = d3.svg.line().x(function (d, i) {
 	    return x(i);
 	  }).y(function (d) {
 	    return y(initialNumberOfPoints - d.standard);
 	  });
 
-	  actualLine = d3.svg.line().x(function (d, i) {
+	  var actualLine = d3.svg.line().x(function (d, i) {
 	    return x(i);
 	  }).y(function (d) {
 	    return y(initialNumberOfPoints - d.done);
 	  });
 
-	  xAxis = d3.svg.axis().scale(x).orient('bottom').ticks(data.length) // number of ticks to display
-	  .tickFormat(function (d, i) {
-	    if (!data[i]) {
+	  var xAxis = d3.svg.axis().scale(x).orient('bottom').ticks(data.length); // number of ticks to display
+
+	  var yAxis = d3.svg.axis().scale(y).orient(config.yScaleOrient).tickPadding(10).outerTickSize(0).tickFormat(function (d, i) {
+	    if (i === 0 && config.yScaleOrient === 'right') {
 	      return;
 	    }
-	    if (config.startLabel && i === 0) {
-	      return config.startLabel;
-	    }
-	    if (config.endLabel && i === data.length - 1) {
-	      return config.endLabel;
-	    }
-	    dateFormat = d3.time.format(config.dateFormat);
-	    return dateFormat(data[i].date);
+	    return d;
 	  });
 
-	  yAxis = d3.svg.axis().scale(y).orient(config.yScaleOrient).innerTickSize(-config.width) // display horizontal grids
-	  .outerTickSize(0);
+	  if (config.yScaleOrient === 'left') {
+	    yAxis.innerTickSize(-config.width); // display horizontal grids
+	  } else {
+	    yAxis.innerTickSize(5);
+	  }
 
-	  chart = bdcgraph.append('svg').attr('class', 'chart').attr('width', config.width + config.margins.left + config.margins.right).attr('height', config.height + config.margins.top + config.margins.bottom).append('g').attr('transform', 'translate(' + config.margins.left + ',' + config.margins.top + ')').attr('font-size', 'small');
+	  var chart = bdcgraph.append('svg').attr('class', 'chart').attr('width', config.width + config.margins.left + config.margins.right).attr('height', config.height + config.margins.top + config.margins.bottom).append('g').attr('transform', 'translate(' + config.margins.left + ',' + config.margins.top + ')').attr('font-size', 'small');
 
 	  // define the shape of an arrowhead
 	  chart.append('defs').append('marker').attr('id', 'arrowhead').attr('markerWidth', '12').attr('markerHeight', '12').attr('viewBox', '-6 -6 12 12').attr('refX', '-2').attr('refY', '0').attr('markerUnits', 'strokeWidth').attr('orient', 'auto').append('polygon').attr('points', '-2,0 -5,5 5,0 -5,-5').attr('fill', config.colors.standard).attr('stroke', '#666').attr('stroke-width', '1px');
 
-	  addArrowHead = function addArrowHead(selection) {
+	  var addArrowHead = function addArrowHead(selection) {
 	    selection.selectAll('line').attr('marker-end', function (d, i) {
-	      if (i > 0) {
+	      if (i === 0 && config.yScaleOrient === 'left') {
 	        // the arrow is only for the first grid
 	        return 'url(#arrowhead)';
 	      }
 	    });
 	  };
 
-	  adjustDaysLabels = function adjustDaysLabels(axis, selection) {
-	    isLabelOverlaping = function isLabelOverlaping(selection, tickNumber, config) {
-	      availableWidth = config.width / tickNumber;
+	  var drawLabels = function drawLabels(selection, axis, data, format, filter) {
+	    axis = axis.tickFormat(function (d, i) {
+	      if (!data[i]) {
+	        return;
+	      }
+	      if (config.yScaleOrient === 'right' && i === 0) {
+	        return;
+	      }
+	      if (config.startLabel && i === 0) {
+	        return config.startLabel;
+	      }
+	      if (config.endLabel && i === data.length - 1) {
+	        return config.endLabel;
+	      }
+	      if (!filter(d, i)) {
+	        return;
+	      }
+	      var dateFormat = d3.time.format(format);
+	      return dateFormat(data[i].date);
+	    });
+	    axis(selection);
+	  };
 
-	      text = selection.selectAll('text');
-	      maxWidth = 0;
+	  var adjustDaysLabels = function adjustDaysLabels(axis, selection) {
+	    var isLabelOverlaping = function isLabelOverlaping(selection, tickNumber, config) {
+	      var availableWidth = config.width / tickNumber;
+
+	      var text = selection.selectAll('text');
+	      var maxWidth = 0;
 	      text.each(function (label) {
-	        width = d3.select(this).node().getBBox().width;
+	        var width = d3.select(this).node().getBBox().width;
 	        if (width > maxWidth) {
 	          maxWidth = width;
 	        }
 	      });
 	      return maxWidth >= availableWidth;
-	    };
-
-	    drawLabels = function drawLabels(selection, axis, data, format, filter) {
-	      axis = axis.tickFormat(function (d, i) {
-	        if (!data[i]) {
-	          return;
-	        }
-	        if (config.startLabel && i === 0) {
-	          return config.startLabel;
-	        }
-	        if (config.endLabel && i === data.length - 1) {
-	          return config.endLabel;
-	        }
-	        if (!filter(d, i)) {
-	          return;
-	        }
-	        dateFormat = d3.time.format(format);
-	        return dateFormat(data[i].date);
-	      });
-	      axis(selection);
 	    };
 
 	    if (isLabelOverlaping(selection, data.length, config)) {
@@ -183,22 +183,19 @@
 	    }
 	  };
 
-	  adjustPointsLabels = function adjustPointsLabels(selection) {
-	    // selection.selectAll 'text'
-	    // .attr 'fill', config.colors.labels
-	    // .attr 'transform', 'translate(-6, 0)'
-	    return;
-	  };
-
 	  // display the x-axis
-	  selection = chart.append('g').attr('class', 'x axis').attr('transform', 'translate(0,' + config.height + ')').call(xAxis);
+	  var selection = chart.append('g').attr('class', 'x axis').attr('transform', 'translate(0,' + config.height + ')');
+
+	  drawLabels(selection, xAxis, data, config.dateFormat, function () {
+	    return true;
+	  });
 
 	  adjustDaysLabels(xAxis, selection);
 
 	  selection.append('text').attr('class', 'daily').attr('fill', config.colors.labels).attr('font-weight', 'bold').attr('transform', 'translate(' + config.width + ', 25)').attr('x', 20).style('text-anchor', 'end').text(config.xTitle);
 
 	  // display the y-axis
-	  chart.append('g').attr('class', 'y axis').call(yAxis).call(adjustPointsLabels).call(addArrowHead);
+	  chart.append('g').attr('class', 'y axis').call(yAxis).call(addArrowHead);
 
 	  chart.selectAll('.axis path, .axis line').attr('fill', 'none').attr('stroke', 'rgba(0, 1, 0, 0.2)').attr('color', 'rgba(0, 1, 0, 0.5)').attr('shape-rendering', 'crispEdges');
 
@@ -253,7 +250,7 @@
 	    if (d.done === null || d.done === undefined || i === 0) {
 	      return;
 	    }
-	    diff = d.done - d.standard;
+	    var diff = d.done - d.standard;
 	    if (diff >= 0) {
 	      return '+' + diff.toFixed(1) + config.goodSuffix;
 	    } else {

@@ -15,7 +15,7 @@ window.renderBDC = function(data, userConfig) {
     return true;
   }
 
-  config = Object.assign({}, defaultConfig);
+  var config = Object.assign({}, defaultConfig);
   Object.assign(config, userConfig);
 
   if(!validateData(data)) {

@@ -1,6 +1,6 @@
 {
   "name": "d3-bdc",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A lib to draw a burn down charts",
   "main": "dist/d3-bdc.js",
   "scripts": {

@@ -63,7 +63,7 @@
 	    return true;
 	  };
 
-	  config = Object.assign({}, defaultConfig);
+	  var config = Object.assign({}, defaultConfig);
 	  Object.assign(config, userConfig);
 
 	  if (!validateData(data)) {
@@ -204,7 +204,7 @@
 
 	  // display the actual line
 	  chart.append('path').attr('class', 'done-line').attr('d', actualLine(data.filter(function (d) {
-	    return d.done;
+	    return !(d.done === null || d.done === undefined);
 	  }))).attr('stroke', config.colors.done).attr('stroke-width', config.doneStrokeWidth).attr('fill', 'none');
 
 	  // display standard dots
@@ -216,7 +216,7 @@
 
 	  // display done dots
 	  chart.selectAll('circle .done-point').data(data.filter(function (d) {
-	    return d.done;
+	    return !(d.done === null || d.done === undefined);
 	  })).enter().append('circle').attr('class', 'done-point').attr('cx', function (d, i) {
 	    return x(i);
 	  }).attr('cy', function (d) {

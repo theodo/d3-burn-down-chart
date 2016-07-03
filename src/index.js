@@ -200,7 +200,9 @@ window.renderBDC = function(data, userConfig) {
   // display the actual line
   chart.append('path')
   .attr('class', 'done-line')
-  .attr('d', actualLine(data.filter(function(d) { return d.done; })))
+  .attr('d', actualLine(data.filter(function(d) {
+    return !(d.done === null || d.done === undefined);
+  })))
   .attr('stroke', config.colors.done)
   .attr('stroke-width', config.doneStrokeWidth)
   .attr('fill', 'none');
@@ -218,7 +220,9 @@ window.renderBDC = function(data, userConfig) {
 
   // display done dots
   chart.selectAll('circle .done-point')
-  .data(data.filter(function(d) { return d.done; }))
+  .data(data.filter(function(d) {
+    return !(d.done === null || d.done === undefined);
+  }))
   .enter()
   .append('circle')
   .attr('class', 'done-point')

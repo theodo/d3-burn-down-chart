@@ -116,10 +116,17 @@ window.onresize = function(){
     config.margins.left = 0
     config.margins.right = 0
     config.yScaleOrient = 'right'
+    config.yScaleOrient = 'right'
+    config.dotRadius = 2
+    config.standardStrokeWidth = 1
+    config.doneStrokeWidth = 1
   } else {
     config.margins.left = 50
     config.margins.right = 70
     config.yScaleOrient = 'left'
+    config.dotRadius = 4
+    config.standardStrokeWidth = 2
+    config.doneStrokeWidth = 2
   }
   renderBDC(data, config);
 }
